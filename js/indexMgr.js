@@ -86,14 +86,16 @@ const IndexTab = (() => {
     UI.clearValidation();
     const colsExpr = cols.map(c => c.sort === 'DESC' ? `${c.name} DESC` : c.name).join(', ');
 
-    let ddl;
-    if (d.indexTypeCd === 'UNIQUE')       ddl = `CREATE UNIQUE INDEX ${schema}.${idxName} ON ${schema}.${tbl} (${colsExpr})`;
-    else if (d.indexTypeCd === 'BITMAP')  ddl = `CREATE BITMAP INDEX ${schema}.${idxName} ON ${schema}.${tbl} (${colsExpr})`;
-    else                                  ddl = `CREATE INDEX ${schema}.${idxName} ON ${schema}.${tbl} (${colsExpr})`;
-    if (d.tablespaceName) ddl += `\nTABLESPACE ${d.tablespaceName.toUpperCase()}`;
-    if (d.iniTrans) ddl += `\nINITRANS ${d.iniTrans}`;
-    if (d.pctFree)  ddl += `\nPCTFREE ${d.pctFree}`;
+    const D = Dialect.current();
+    let ddl = `${D.indexCreateKeyword(d.indexTypeCd)} ${schema}.${idxName} ON ${schema}.${tbl} (${colsExpr})`;
+    ddl += D.indexStorageClause({
+      tablespace: d.tablespaceName,
+      iniTrans:   d.iniTrans,
+      pctFree:    d.pctFree,
+    });
     ddl += ';\n';
+    const fallbackNotice = D.indexFallbackNotice(d.indexTypeCd);
+    if (fallbackNotice) ddl = fallbackNotice + ddl;
 
     const tableIdRef = `(SELECT TABLE_ID FROM TB_META_TABLE WHERE SCHEMA_NAME=${Utils.q(schema)} AND TABLE_NAME=${Utils.q(tbl)})`;
     const idxIdRef   = `(SELECT INDEX_ID FROM TB_META_INDEX WHERE TABLE_ID=${tableIdRef} AND INDEX_NAME=${Utils.q(idxName)})`;
@@ -106,7 +108,7 @@ const IndexTab = (() => {
     STATUS_CD,
     CREATED_BY, CREATED_AT, UPDATED_BY, UPDATED_AT
 ) VALUES (
-    SEQ_META_INDEX_ID.NEXTVAL,
+    ${D.nextval('SEQ_META_INDEX_ID')},
     ${tableIdRef},
     ${Utils.q(idxName)}, ${Utils.q(d.indexTypeCd)},
     ${Utils.q(d.tablespaceName ? d.tablespaceName.toUpperCase() : '')}, ${Utils.num(d.iniTrans)}, ${Utils.num(d.pctFree)},

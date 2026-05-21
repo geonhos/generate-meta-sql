@@ -8,7 +8,7 @@
   <meta http-equiv="Pragma" content="no-cache">
   <meta http-equiv="Expires" content="0">
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="css/styles.css?v=14">
+  <link rel="stylesheet" href="css/styles.css?v=15">
 </head>
 <body>
 
@@ -65,6 +65,11 @@
       </div>
 
       <div class="topbar-right">
+        <div class="seg dialect-toggle" id="dialect-toggle" role="radiogroup" aria-label="DB 다이얼렉트" title="생성 SQL의 대상 DBMS">
+          <span class="dialect-label">DB</span>
+          <button type="button" data-dialect="ORACLE" class="active" role="radio" aria-checked="true">Oracle</button>
+          <button type="button" data-dialect="POSTGRESQL" role="radio" aria-checked="false">PostgreSQL</button>
+        </div>
         <button class="icon-btn" id="toggle-theme" title="다크 모드 토글">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
         </button>
@@ -316,7 +321,8 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
 
 <!-- Core -->
 <script src="js/codes.js?v=5"></script>
-<script src="js/utils.js?v=6"></script>
+<script src="js/dialect.js?v=1"></script>
+<script src="js/utils.js?v=7"></script>
 <!-- UI -->
 <script src="js/ui.js?v=7"></script>
 <script src="js/sqlview.js?v=6"></script>
@@ -326,7 +332,7 @@ const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
 <script src="js/indexMgr.js?v=1"></script>
 <script src="js/sequence.js?v=1"></script>
 <!-- App bootstrap (must load last) -->
-<script src="js/app.js?v=2"></script>
+<script src="js/app.js?v=3"></script>
 
 </body>
 </html>

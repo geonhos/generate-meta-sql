@@ -111,6 +111,32 @@ const App = (() => {
     });
   }
 
+  function initDialectToggle() {
+    const root = document.getElementById('dialect-toggle');
+    if (!root) return;
+    const saved = localStorage.getItem('meta.dialect') || 'ORACLE';
+    applyDialect(saved);
+
+    root.querySelectorAll('button[data-dialect]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        applyDialect(btn.dataset.dialect);
+        localStorage.setItem('meta.dialect', Dialect.activeName());
+        Utils.toast(`DB 다이얼렉트: ${Dialect.current().label}`);
+      });
+    });
+  }
+
+  function applyDialect(name) {
+    Dialect.set(name);
+    const root = document.getElementById('dialect-toggle');
+    if (!root) return;
+    root.querySelectorAll('button[data-dialect]').forEach(b => {
+      const on = b.dataset.dialect === Dialect.activeName();
+      b.classList.toggle('active', on);
+      b.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+  }
+
   function initEmpSync() {
     const el = document.getElementById('global-emp-id');
     const saved = localStorage.getItem('meta.empId') || '';
@@ -192,6 +218,7 @@ const App = (() => {
     initNav();
     initActions();
     initShortcuts();
+    initDialectToggle();
     initEmpSync();
     initSidebarToggle();
     initTweaks();
