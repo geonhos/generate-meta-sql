@@ -171,7 +171,7 @@ const App = (() => {
       applyTweaks(state); syncSegButtons(state);
     });
 
-    panel.querySelectorAll('.seg').forEach(seg => {
+    panel.querySelectorAll('.seg[data-tweak]').forEach(seg => {
       seg.querySelectorAll('button').forEach(b => {
         b.addEventListener('click', () => {
           const key = seg.dataset.tweak;
@@ -199,7 +199,7 @@ const App = (() => {
   }
 
   function syncSegButtons(s) {
-    document.querySelectorAll('.seg').forEach(seg => {
+    document.querySelectorAll('.seg[data-tweak]').forEach(seg => {
       const key = seg.dataset.tweak;
       seg.querySelectorAll('button').forEach(b => {
         b.classList.toggle('active', b.dataset.val === s[key]);
