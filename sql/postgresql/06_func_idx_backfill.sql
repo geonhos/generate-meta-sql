@@ -43,6 +43,56 @@ SELECT mt.SCHEMA_NAME       AS index_owner,
  ORDER BY mt.SCHEMA_NAME, mi.INDEX_NAME, ic.COLUMN_POS;
 
 -- =====================================================================
+-- §6.1b INSERT — 03에서 누락된 표현식 컬럼 행 보강 (방어 코드)
+--   03_initial_load.sql §7.3.2b에서 정상 적재되었으면 0건 INSERT.
+--   03 이전 버전(표현식 INSERT 미포함)에서 실행된 환경에서도 정상 동작.
+--   COLUMN_NAME: PG는 SYS_NC 시스템명이 없으므로 표현식 텍스트 대문자 저장.
+-- =====================================================================
+INSERT INTO TB_META_INDEX_COLUMN (INDEX_ID, COLUMN_POS, COLUMN_NAME, SORT_ORDER, FUNC_EXPRESSION)
+SELECT
+    mi.INDEX_ID,
+    (k.idx + 1)::int,
+    LEFT(UPPER(pg_get_indexdef(idx.indexrelid, (k.idx + 1)::int, false)), 128),
+    CASE WHEN (idx.indoption[k.idx] & 1) = 1 THEN 'DESC' ELSE 'ASC' END,
+    LEFT(pg_get_indexdef(idx.indexrelid, (k.idx + 1)::int, false), 2000)
+FROM pg_index idx
+JOIN pg_class      c   ON c.oid = idx.indexrelid
+JOIN pg_class      ct  ON ct.oid = idx.indrelid
+JOIN pg_namespace  n   ON n.oid = ct.relnamespace
+JOIN TB_META_TABLE mt
+      ON mt.SCHEMA_NAME = UPPER(n.nspname) AND mt.TABLE_NAME = UPPER(ct.relname)
+JOIN TB_META_INDEX mi
+      ON mi.TABLE_ID = mt.TABLE_ID AND mi.INDEX_NAME = UPPER(c.relname)
+CROSS JOIN LATERAL generate_series(0, array_length(idx.indkey::int[], 1) - 1) AS k(idx)
+WHERE UPPER(n.nspname) IN ('SVC1','SVC2'/* 대상 스키마 목록 */)
+  AND idx.indkey[k.idx] = 0
+  AND NOT EXISTS (
+        SELECT 1 FROM TB_META_INDEX_COLUMN m
+         WHERE m.INDEX_ID   = mi.INDEX_ID
+           AND m.COLUMN_POS = (k.idx + 1)::int
+      )
+;
+
+-- §6.1c HIST — §6.1b에서 신규 INSERT된 행에 대한 INITIAL_LOAD 이력 적재
+INSERT INTO TB_META_INDEX_COLUMN_HIST (
+    HIST_ID, HIST_TYPE, HIST_AT, HIST_BY, CHANGE_REASON,
+    INDEX_ID, COLUMN_POS, COLUMN_NAME, SORT_ORDER, FUNC_EXPRESSION
+)
+SELECT
+    nextval('SEQ_META_HIST_ID'), 'I', CURRENT_TIMESTAMP, USER, 'INITIAL_LOAD',
+    ic.INDEX_ID, ic.COLUMN_POS, ic.COLUMN_NAME, ic.SORT_ORDER, ic.FUNC_EXPRESSION
+FROM TB_META_INDEX_COLUMN ic
+WHERE ic.FUNC_EXPRESSION IS NOT NULL
+  AND NOT EXISTS (
+      SELECT 1 FROM TB_META_INDEX_COLUMN_HIST h
+       WHERE h.INDEX_ID      = ic.INDEX_ID
+         AND h.COLUMN_POS    = ic.COLUMN_POS
+         AND h.HIST_TYPE     = 'I'
+         AND h.CHANGE_REASON = 'INITIAL_LOAD'
+  )
+;
+
+-- =====================================================================
 -- §6.2 UPDATE — 표현식 자동 적재 (PG는 LONG 제약 없으므로 SQL 한 번으로 처리)
 -- =====================================================================
 UPDATE TB_META_INDEX_COLUMN ic

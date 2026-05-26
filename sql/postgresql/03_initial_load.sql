@@ -345,8 +345,37 @@ WHERE UPPER(n.nspname) IN ('SVC1','SVC2'/* 대상 스키마 목록 */)
       )
 ;
 
--- 함수기반(표현식) 인덱스의 FUNC_EXPRESSION 적재는 표준 SQL-only 스크립트에서는 제외한다.
--- (pg_get_indexdef() 사용 시 별도 채움 가능 — 06_func_idx_backfill.sql 참조)
+-- §7.3.2b 표현식(함수기반) 인덱스 컬럼 — pg_get_indexdef로 표현식 직접 적재
+--   Oracle은 ALL_IND_COLUMNS에 SYS_NC 시스템 컬럼명으로 잡히나,
+--   PG는 pg_attribute에 표현식 자리가 없으므로 별도 INSERT.
+--   COLUMN_NAME: PG는 SYS_NC 시스템명이 없으므로 표현식 텍스트 대문자 저장
+--                (Oracle SYS_NC와 구조적 차이 — 다이얼렉트 간 COLUMN_NAME
+--                 직접 비교 불가, FUNC_EXPRESSION으로 비교할 것)
+--   FUNC_EXPRESSION: 원본 표현식 텍스트 (2000자 절단)
+INSERT INTO TB_META_INDEX_COLUMN (INDEX_ID, COLUMN_POS, COLUMN_NAME, SORT_ORDER, FUNC_EXPRESSION)
+SELECT
+    mi.INDEX_ID,
+    (k.idx + 1)::int                                                            AS COLUMN_POS,
+    LEFT(UPPER(pg_get_indexdef(idx.indexrelid, (k.idx + 1)::int, false)), 128)   AS COLUMN_NAME,
+    CASE WHEN (idx.indoption[k.idx] & 1) = 1 THEN 'DESC' ELSE 'ASC' END        AS SORT_ORDER,
+    LEFT(pg_get_indexdef(idx.indexrelid, (k.idx + 1)::int, false), 2000)         AS FUNC_EXPRESSION
+FROM pg_index idx
+JOIN pg_class      c   ON c.oid = idx.indexrelid
+JOIN pg_class      ct  ON ct.oid = idx.indrelid
+JOIN pg_namespace  n   ON n.oid = ct.relnamespace
+JOIN TB_META_TABLE mt
+      ON mt.SCHEMA_NAME = UPPER(n.nspname) AND mt.TABLE_NAME = UPPER(ct.relname)
+JOIN TB_META_INDEX mi
+      ON mi.TABLE_ID = mt.TABLE_ID AND mi.INDEX_NAME = UPPER(c.relname)
+CROSS JOIN LATERAL generate_series(0, array_length(idx.indkey::int[], 1) - 1) AS k(idx)
+WHERE UPPER(n.nspname) IN ('SVC1','SVC2'/* 대상 스키마 목록 */)
+  AND idx.indkey[k.idx] = 0                         -- 표현식 자리만
+  AND NOT EXISTS (
+        SELECT 1 FROM TB_META_INDEX_COLUMN m
+         WHERE m.INDEX_ID   = mi.INDEX_ID
+           AND m.COLUMN_POS = (k.idx + 1)::int
+      )
+;
 
 -- §7.5.4 TB_META_INDEX_COLUMN_HIST
 INSERT INTO TB_META_INDEX_COLUMN_HIST (
