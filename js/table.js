@@ -255,7 +255,7 @@ const TableTab = (() => {
       ddl += `,\n    CONSTRAINT UK_${tbl.replace(/^TB_/, '')}_${seq} UNIQUE (${uk})`;
     });
     ddl += '\n)';
-    if (meta.tablespace) ddl += `\nTABLESPACE ${meta.tablespace.toUpperCase()}`;
+    ddl += Dialect.current().tableStorageClause({ tablespace: meta.tablespace });
     ddl += ';\n';
 
     if (meta.logicalName) ddl += `COMMENT ON TABLE ${schema}.${tbl} IS ${Utils.q(meta.logicalName)};\n`;
@@ -290,6 +290,7 @@ const TableTab = (() => {
     }
 
     // TB_META_TABLE INSERT (spec 순서)
+    const D = Dialect.current();
     const tableInsert = `INSERT INTO TB_META_TABLE (
     TABLE_ID, SCHEMA_NAME, TABLE_NAME, LOGICAL_NAME, DESCRIPTION,
     VIEW_YN, SERVICE_CD, OWNER_EMP_ID, SECONDARY_EMP_ID,
@@ -298,7 +299,7 @@ const TableTab = (() => {
     STATUS_CD, REMARK,
     CREATED_BY, CREATED_AT, UPDATED_BY, UPDATED_AT
 ) VALUES (
-    SEQ_META_TABLE_ID.NEXTVAL,
+    ${D.nextval('SEQ_META_TABLE_ID')},
     ${Utils.q(schema)}, ${Utils.q(tbl)}, ${Utils.q(meta.logicalName)}, ${Utils.q(meta.description)},
     ${Utils.yn(meta.viewYn)}, ${Utils.q(meta.serviceCd)}, ${Utils.q(emp)}, NULL,
     ${Utils.yn(meta.keyTableYn)}, ${Utils.yn(meta.isolationYn)}, ${Utils.q(meta.isolationLevelCd)},
@@ -322,7 +323,7 @@ const TableTab = (() => {
     STATUS_CD, REMARK,
     CREATED_BY, CREATED_AT, UPDATED_BY, UPDATED_AT
 ) VALUES (
-    SEQ_META_COLUMN_ID.NEXTVAL,
+    ${D.nextval('SEQ_META_COLUMN_ID')},
     ${tableIdRef},
     ${Utils.q(c.colName.toUpperCase())}, ${i + 1},
     ${Utils.q(c.logicalName)}, ${Utils.q(c.description)},
@@ -346,7 +347,7 @@ const TableTab = (() => {
     ${Utils.HIST_COLS.COLUMN.join(',\n    ')}
 )
 SELECT
-    SEQ_META_HIST_ID.NEXTVAL, 'I', SYSTIMESTAMP, ${Utils.q(emp)}, ${Utils.q(reason)},
+    ${D.nextval('SEQ_META_HIST_ID')}, 'I', ${D.sysTimestamp()}, ${Utils.q(emp)}, ${Utils.q(reason)},
     ${Utils.HIST_COLS.COLUMN.join(', ')}
 FROM TB_META_COLUMN
 WHERE TABLE_ID = ${tableIdRef};`;
@@ -362,7 +363,11 @@ WHERE TABLE_ID = ${tableIdRef};`;
         const pkColName = pkColObjs[0].colName.toUpperCase();
         const tblBase = tbl.replace(/^TB_/, '');
         const seqName = `SEQ_${tblBase}_${pkColName}`;
-        seqDdl = `CREATE SEQUENCE ${schema}.${seqName}\n  START WITH 1\n  INCREMENT BY 1\n  NOCYCLE\n  CACHE 20\n  NOORDER;\n`;
+        seqDdl = D.sequenceCreateDDL({
+          schema, seq: seqName,
+          startWith: 1, incrementBy: 1,
+          cycle: false, cache: 20, order: false,
+        });
         seqInsert = `INSERT INTO TB_META_SEQUENCE (
     SEQUENCE_ID, SCHEMA_NAME, SEQUENCE_NAME,
     MIN_VALUE, MAX_VALUE, INCREMENT_BY, START_WITH, CACHE_SIZE,
@@ -371,7 +376,7 @@ WHERE TABLE_ID = ${tableIdRef};`;
     STATUS_CD,
     CREATED_BY, CREATED_AT, UPDATED_BY, UPDATED_AT
 ) VALUES (
-    SEQ_META_SEQUENCE_ID.NEXTVAL,
+    ${D.nextval('SEQ_META_SEQUENCE_ID')},
     ${Utils.q(schema)}, ${Utils.q(seqName)},
     NULL, NULL, 1, 1, 20,
     'N', 'N', 'PK',

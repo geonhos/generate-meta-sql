@@ -85,15 +85,19 @@ const SequenceTab = (() => {
   }
 
   function buildDdl(schema, seq, d, isAlter) {
-    let ddl = `${isAlter?'ALTER':'CREATE'} SEQUENCE ${schema}.${seq}`;
-    if (!isAlter && d.startWith) ddl += `\n  START WITH ${d.startWith}`;
-    if (d.incrementBy) ddl += `\n  INCREMENT BY ${d.incrementBy}`;
-    if (d.minValue)    ddl += `\n  MINVALUE ${d.minValue}`;
-    if (d.maxValue)    ddl += `\n  MAXVALUE ${d.maxValue}`;
-    ddl += `\n  ${d.cycleYn ? 'CYCLE' : 'NOCYCLE'}`;
-    if (d.cacheSize)   ddl += `\n  CACHE ${d.cacheSize}`;
-    ddl += `\n  ${d.orderYn ? 'ORDER' : 'NOORDER'};\n`;
-    return ddl;
+    const D = Dialect.current();
+    const args = {
+      schema, seq,
+      incrementBy: d.incrementBy,
+      minValue:    d.minValue,
+      maxValue:    d.maxValue,
+      cycle:       !!d.cycleYn,
+      cache:       d.cacheSize,
+      order:       !!d.orderYn,
+    };
+    return isAlter
+      ? D.sequenceAlterDDL(args)
+      : D.sequenceCreateDDL({ ...args, startWith: d.startWith });
   }
 
   function genCreate() {
@@ -121,7 +125,7 @@ const SequenceTab = (() => {
     STATUS_CD,
     CREATED_BY, CREATED_AT, UPDATED_BY, UPDATED_AT
 ) VALUES (
-    SEQ_META_SEQUENCE_ID.NEXTVAL,
+    ${Dialect.current().nextval('SEQ_META_SEQUENCE_ID')},
     ${Utils.q(schema)}, ${Utils.q(seq)},
     ${Utils.num(d.minValue)}, ${Utils.num(d.maxValue)}, ${Utils.num(d.incrementBy || 1)}, ${Utils.num(d.startWith || 1)}, ${Utils.num(d.cacheSize || 20)},
     ${Utils.yn(d.cycleYn)}, ${Utils.yn(d.orderYn)}, ${Utils.q(d.purposeCd)},

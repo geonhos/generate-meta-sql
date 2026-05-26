@@ -162,11 +162,14 @@ const ColumnTab = (() => {
     const tbl    = Utils.ensurePrefix(t.tableName, 'TB');
     const col    = c.colName.toUpperCase();
     const type   = Utils.typeDDL(c.dataType, c.dataLength, c.dataPrecision, c.dataScale);
+    const D = Dialect.current();
 
-    let ddl = `ALTER TABLE ${schema}.${tbl} ADD (${col} ${type}`;
-    if (c.defaultValue) ddl += ` DEFAULT ${c.defaultValue}`;
-    ddl += c.nullableYn ? '' : ' NOT NULL';
-    ddl += ');\n';
+    let ddl = D.addColumnDDL({
+      schema, tbl, col,
+      typeDDLFrag: type,
+      defaultValue: c.defaultValue,
+      nullable: !!c.nullableYn,
+    });
     if (c.logicalName) ddl += `COMMENT ON COLUMN ${schema}.${tbl}.${col} IS ${Utils.q(c.logicalName)};\n`;
 
     const constraints = [];
@@ -177,7 +180,7 @@ const ColumnTab = (() => {
     const tableIdRef = buildTableIdRef(schema, tbl);
     const orderExpr = c.columnOrder
       ? Utils.num(c.columnOrder)
-      : `(SELECT NVL(MAX(COLUMN_ORDER),0)+1 FROM TB_META_COLUMN WHERE TABLE_ID=${tableIdRef})`;
+      : `(SELECT ${D.nvl('MAX(COLUMN_ORDER)', '0')}+1 FROM TB_META_COLUMN WHERE TABLE_ID=${tableIdRef})`;
 
     const insert = `INSERT INTO TB_META_COLUMN (
     COLUMN_ID, TABLE_ID, COLUMN_NAME, COLUMN_ORDER,
@@ -191,7 +194,7 @@ const ColumnTab = (() => {
     STATUS_CD, REMARK,
     CREATED_BY, CREATED_AT, UPDATED_BY, UPDATED_AT
 ) VALUES (
-    SEQ_META_COLUMN_ID.NEXTVAL,
+    ${D.nextval('SEQ_META_COLUMN_ID')},
     ${tableIdRef},
     ${Utils.q(col)}, ${orderExpr},
     ${Utils.q(c.logicalName)}, ${Utils.q(c.description)},
@@ -238,12 +241,14 @@ const ColumnTab = (() => {
     const tbl    = Utils.ensurePrefix(t.tableName, 'TB');
     const col    = c.colName.toUpperCase();
     const type   = c.dataType ? Utils.typeDDL(c.dataType, c.dataLength, c.dataPrecision, c.dataScale) : null;
+    const D = Dialect.current();
 
-    let ddl = `ALTER TABLE ${schema}.${tbl} MODIFY (${col}`;
-    if (type) ddl += ` ${type}`;
-    if (c.defaultValue) ddl += ` DEFAULT ${c.defaultValue}`;
-    ddl += c.nullableYn ? ' NULL' : ' NOT NULL';
-    ddl += ');\n';
+    let ddl = D.modifyColumnDDL({
+      schema, tbl, col,
+      typeDDLFrag: type,
+      defaultValue: c.defaultValue,
+      nullable: !!c.nullableYn,
+    });
     if (c.logicalName) ddl += `COMMENT ON COLUMN ${schema}.${tbl}.${col} IS ${Utils.q(c.logicalName)};\n`;
 
     // touched 인 경우에만 SET 포함. Utils.q('') === 'NULL' 이므로

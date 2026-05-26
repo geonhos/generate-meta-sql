@@ -69,28 +69,11 @@ const Utils = {
     return html;
   },
 
-  /** Oracle 데이터타입 → 컬럼 DDL 일부
-   *  @param {string} [lengthSemantics] 'BYTE'|'CHAR' (VARCHAR2/CHAR 전용, 미지정 시 Oracle 세션 기본값(NLS_LENGTH_SEMANTICS) 따름) */
+  /** 데이터타입 → 컬럼 DDL 일부. 활성 다이얼렉트(Oracle/PG) 기준으로 매핑.
+   *  @param {string} [lengthSemantics] 'BYTE'|'CHAR' (Oracle VARCHAR2/CHAR 전용, PG에서는 무시)
+   *  Oracle DATE → PG TIMESTAMP 매핑 등 다이얼렉트 차이는 js/dialect.js 참조. */
   typeDDL(type, length, precision, scale, lengthSemantics) {
-    const t = (type || '').toUpperCase();
-    if (t === 'VARCHAR2' || t === 'CHAR') {
-      const sem = (lengthSemantics || '').toUpperCase();
-      const semSuffix = (sem === 'CHAR' || sem === 'BYTE') ? ` ${sem}` : '';
-      return `${t}(${length || 1}${semSuffix})`;
-    }
-    if (t === 'RAW') {
-      return `RAW(${length || 1})`;
-    }
-    if (t === 'NUMBER') {
-      if (precision && scale !== null && scale !== undefined && scale !== '') {
-        return `NUMBER(${precision},${scale})`;
-      } else if (precision) {
-        return `NUMBER(${precision})`;
-      }
-      return 'NUMBER';
-    }
-    // DATE / TIMESTAMP / CLOB / BLOB / FLOAT / BINARY_DOUBLE
-    return t;
+    return Dialect.current().typeDDL(type, length, precision, scale, lengthSemantics);
   },
 
   /** 폼 값을 일괄 추출 */
@@ -143,12 +126,13 @@ const Utils = {
     return (el && el.value.trim()) || 'UNKNOWN';
   },
 
-  /** 감사 컬럼 공통 SQL 조각 */
+  /** 감사 컬럼 공통 SQL 조각 (다이얼렉트별 타임스탬프 함수 사용) */
   auditCols(empId) {
     const e = empId || Utils.getEmpId();
+    const ts = Dialect.current().sysTimestamp();
     return {
-      insert: `${Utils.q(e)}, SYSTIMESTAMP, ${Utils.q(e)}, SYSTIMESTAMP`,
-      update: `UPDATED_BY = ${Utils.q(e)}, UPDATED_AT = SYSTIMESTAMP`,
+      insert: `${Utils.q(e)}, ${ts}, ${Utils.q(e)}, ${ts}`,
+      update: `UPDATED_BY = ${Utils.q(e)}, UPDATED_AT = ${ts}`,
     };
   },
 
@@ -233,11 +217,12 @@ const Utils = {
     const e = empId || Utils.getEmpId();
     const conf = Utils.HIST_META[kind];
     const cols = Utils.HIST_COLS[kind];
+    const d = Dialect.current();
     const header = ['HIST_ID','HIST_TYPE','HIST_AT','HIST_BY','CHANGE_REASON'];
     const headerVals = [
-      'SEQ_META_HIST_ID.NEXTVAL',
+      d.nextval('SEQ_META_HIST_ID'),
       Utils.q(op),
-      'SYSTIMESTAMP',
+      d.sysTimestamp(),
       Utils.q(e),
       Utils.q(reason),
     ];
@@ -260,10 +245,10 @@ WHERE ${whereClause};`;
     const vals = cols.map(c => {
       const v = (valuesMap || {})[c];
       if (v === undefined || v === null) return 'NULL';
-      // 이미 SQL 조각인 경우 그대로
+      // 이미 SQL 조각인 경우 그대로 — Oracle/PG 두 다이얼렉트 표현 모두 인식
       if (typeof v === 'string' && (
-          v.startsWith('(SELECT') || v.startsWith('SEQ_') ||
-          v === 'SYSTIMESTAMP' || v === 'NULL' ||
+          v.startsWith('(SELECT') || v.startsWith('SEQ_') || v.startsWith('nextval(') ||
+          v === 'SYSTIMESTAMP' || v === 'CURRENT_TIMESTAMP' || v === 'NULL' ||
           /^\d+$/.test(v) || /^'.*'$/.test(v)
       )) return v;
       return Utils.q(v);

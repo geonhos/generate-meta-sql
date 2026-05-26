@@ -956,6 +956,19 @@ html[data-theme="dark"] .btn-danger:hover { background: #2a1517; }
   box-shadow: var(--shadow-sm);
 }
 
+/* Topbar 다이얼렉트 토글 */
+.dialect-toggle {
+  align-items: center;
+  margin-right: 8px;
+}
+.dialect-toggle .dialect-label {
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  padding: 0 8px 0 6px;
+  text-transform: uppercase;
+}
+
 /* Toast */
 .toast {
   position: fixed;
