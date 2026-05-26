@@ -15,372 +15,372 @@
 -- ---------------------------------------------------------------------
 -- §6.1 시퀀스
 -- ---------------------------------------------------------------------
-CREATE SEQUENCE SEQ_META_TABLE_ID    START WITH 1 INCREMENT BY 1 CACHE 100 NO CYCLE;
-CREATE SEQUENCE SEQ_META_COLUMN_ID   START WITH 1 INCREMENT BY 1 CACHE 500 NO CYCLE;
-CREATE SEQUENCE SEQ_META_INDEX_ID    START WITH 1 INCREMENT BY 1 CACHE 100 NO CYCLE;
-CREATE SEQUENCE SEQ_META_SEQUENCE_ID START WITH 1 INCREMENT BY 1 CACHE 100 NO CYCLE;
+CREATE SEQUENCE seq_meta_table_id    START WITH 1 INCREMENT BY 1 CACHE 100 NO CYCLE;
+CREATE SEQUENCE seq_meta_column_id   START WITH 1 INCREMENT BY 1 CACHE 500 NO CYCLE;
+CREATE SEQUENCE seq_meta_index_id    START WITH 1 INCREMENT BY 1 CACHE 100 NO CYCLE;
+CREATE SEQUENCE seq_meta_sequence_id START WITH 1 INCREMENT BY 1 CACHE 100 NO CYCLE;
 
 -- ---------------------------------------------------------------------
 -- §6.2 TB_META_CODE
 -- ---------------------------------------------------------------------
-CREATE TABLE TB_META_CODE (
-    CODE_GROUP    VARCHAR(30)   NOT NULL,
-    CODE_VALUE    VARCHAR(30)   NOT NULL,
-    CODE_NAME     VARCHAR(200)  NOT NULL,
-    DESCRIPTION   VARCHAR(2000),
-    SORT_ORDER    NUMERIC(4),
-    USE_YN        CHAR(1) DEFAULT 'Y' NOT NULL,
-    CREATED_BY    VARCHAR(128)  NOT NULL,
-    CREATED_AT    TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    UPDATED_BY    VARCHAR(128)  NOT NULL,
-    UPDATED_AT    TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    CONSTRAINT PK_META_CODE PRIMARY KEY (CODE_GROUP, CODE_VALUE),
-    CONSTRAINT CK_META_CODE_USE CHECK (USE_YN IN ('Y','N'))
+CREATE TABLE tb_meta_code (
+    code_group    varchar(30)   NOT NULL,
+    code_value    varchar(30)   NOT NULL,
+    code_name     varchar(200)  NOT NULL,
+    description   varchar(2000),
+    sort_order    numeric(4),
+    use_yn        char(1) DEFAULT 'Y' NOT NULL,
+    created_by    varchar(128)  NOT NULL,
+    created_at    timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_by    varchar(128)  NOT NULL,
+    updated_at    timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT pk_meta_code PRIMARY KEY (code_group, code_value),
+    CONSTRAINT ck_meta_code_use CHECK (use_yn IN ('Y','N'))
 );
 
 -- ---------------------------------------------------------------------
 -- §6.3 TB_META_TABLE
 -- ---------------------------------------------------------------------
-CREATE TABLE TB_META_TABLE (
-    TABLE_ID             NUMERIC(12)   NOT NULL,
-    SCHEMA_NAME          VARCHAR(128)  NOT NULL,
-    TABLE_NAME           VARCHAR(128)  NOT NULL,
-    LOGICAL_NAME         VARCHAR(200),
-    DESCRIPTION          VARCHAR(2000),
-    VIEW_YN              CHAR(1) DEFAULT 'N' NOT NULL,
-    SERVICE_CD           VARCHAR(20)   NOT NULL,
-    OWNER_EMP_ID         VARCHAR(20)   NOT NULL,
-    SECONDARY_EMP_ID     VARCHAR(20),
-    KEY_TABLE_YN         CHAR(1) DEFAULT 'N' NOT NULL,
-    ISOLATION_YN         CHAR(1) DEFAULT 'N' NOT NULL,
-    ISOLATION_LEVEL_CD   VARCHAR(10),
-    PCI_YN               CHAR(1) DEFAULT 'N' NOT NULL,
-    RETENTION_PERIOD_CD  VARCHAR(10)   NOT NULL,
-    RETENTION_BASIS      VARCHAR(500),
-    TOS_CD               VARCHAR(20),
-    STATUS_CD            VARCHAR(10)   DEFAULT 'ACTIVE' NOT NULL,
-    REMARK               VARCHAR(4000),
-    CREATED_BY           VARCHAR(128)  NOT NULL,
-    CREATED_AT           TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    UPDATED_BY           VARCHAR(128)  NOT NULL,
-    UPDATED_AT           TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    CONSTRAINT PK_META_TABLE PRIMARY KEY (TABLE_ID),
-    CONSTRAINT UK_META_TABLE UNIQUE (SCHEMA_NAME, TABLE_NAME),
-    CONSTRAINT CK_META_TABLE_YN CHECK (
-        VIEW_YN IN ('Y','N') AND KEY_TABLE_YN IN ('Y','N')
-        AND ISOLATION_YN IN ('Y','N') AND PCI_YN IN ('Y','N')
+CREATE TABLE tb_meta_table (
+    table_id             numeric(12)   NOT NULL,
+    schema_name          varchar(128)  NOT NULL,
+    table_name           varchar(128)  NOT NULL,
+    logical_name         varchar(200),
+    description          varchar(2000),
+    view_yn              char(1) DEFAULT 'N' NOT NULL,
+    service_cd           varchar(20)   NOT NULL,
+    owner_emp_id         varchar(20)   NOT NULL,
+    secondary_emp_id     varchar(20),
+    key_table_yn         char(1) DEFAULT 'N' NOT NULL,
+    isolation_yn         char(1) DEFAULT 'N' NOT NULL,
+    isolation_level_cd   varchar(10),
+    pci_yn               char(1) DEFAULT 'N' NOT NULL,
+    retention_period_cd  varchar(10)   NOT NULL,
+    retention_basis      varchar(500),
+    tos_cd               varchar(20),
+    status_cd            varchar(10)   DEFAULT 'ACTIVE' NOT NULL,
+    remark               varchar(4000),
+    created_by           varchar(128)  NOT NULL,
+    created_at           timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_by           varchar(128)  NOT NULL,
+    updated_at           timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT pk_meta_table PRIMARY KEY (table_id),
+    CONSTRAINT uk_meta_table UNIQUE (schema_name, table_name),
+    CONSTRAINT ck_meta_table_yn CHECK (
+        view_yn IN ('Y','N') AND key_table_yn IN ('Y','N')
+        AND isolation_yn IN ('Y','N') AND pci_yn IN ('Y','N')
     )
 );
 
-CREATE INDEX IDX_META_TABLE_01 ON TB_META_TABLE (SERVICE_CD, STATUS_CD);
-CREATE INDEX IDX_META_TABLE_02 ON TB_META_TABLE (OWNER_EMP_ID);
-CREATE INDEX IDX_META_TABLE_03 ON TB_META_TABLE (PCI_YN);
+CREATE INDEX idx_meta_table_01 ON tb_meta_table (service_cd, status_cd);
+CREATE INDEX idx_meta_table_02 ON tb_meta_table (owner_emp_id);
+CREATE INDEX idx_meta_table_03 ON tb_meta_table (pci_yn);
 
 -- ---------------------------------------------------------------------
 -- §6.4 TB_META_COLUMN
 -- ---------------------------------------------------------------------
-CREATE TABLE TB_META_COLUMN (
-    COLUMN_ID              NUMERIC(14)   NOT NULL,
-    TABLE_ID               NUMERIC(12)   NOT NULL,
-    COLUMN_NAME            VARCHAR(128)  NOT NULL,
-    COLUMN_ORDER           NUMERIC(4)    NOT NULL,
-    LOGICAL_NAME           VARCHAR(200),
-    DESCRIPTION            VARCHAR(2000),
-    DATA_TYPE              VARCHAR(30)   NOT NULL,
-    DATA_LENGTH            NUMERIC(6),
-    DATA_PRECISION         NUMERIC(6),
-    DATA_SCALE             NUMERIC(6),
-    NULLABLE_YN            CHAR(1)       NOT NULL,
-    DEFAULT_VALUE          VARCHAR(500),
-    PK_YN                  CHAR(1) DEFAULT 'N' NOT NULL,
-    UK_YN                  CHAR(1) DEFAULT 'N' NOT NULL,
-    FK_YN                  CHAR(1) DEFAULT 'N' NOT NULL,
-    PCI_YN                 CHAR(1) DEFAULT 'N' NOT NULL,
-    PCI_CATEGORY_CD        VARCHAR(20),
-    SENSITIVITY_CD         VARCHAR(10)   DEFAULT 'LOW' NOT NULL,
-    ENCRYPTION_YN          CHAR(1) DEFAULT 'N' NOT NULL,
-    ENCRYPTION_ALG         VARCHAR(50),
-    MASKING_YN             CHAR(1) DEFAULT 'N' NOT NULL,
-    MASKING_RULE_CD        VARCHAR(20),
-    RETENTION_PERIOD_CD    VARCHAR(10),
-    TOS_CD                 VARCHAR(20),
-    STATUS_CD              VARCHAR(10)   DEFAULT 'ACTIVE' NOT NULL,
-    REMARK                 VARCHAR(4000),
-    CREATED_BY             VARCHAR(128)  NOT NULL,
-    CREATED_AT             TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    UPDATED_BY             VARCHAR(128)  NOT NULL,
-    UPDATED_AT             TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    CONSTRAINT PK_META_COLUMN PRIMARY KEY (COLUMN_ID),
-    CONSTRAINT UK_META_COLUMN UNIQUE (TABLE_ID, COLUMN_NAME),
-    CONSTRAINT FK_META_COLUMN_TABLE FOREIGN KEY (TABLE_ID) REFERENCES TB_META_TABLE(TABLE_ID),
-    CONSTRAINT CK_META_COLUMN_YN CHECK (
-        NULLABLE_YN IN ('Y','N') AND PK_YN IN ('Y','N') AND UK_YN IN ('Y','N')
-        AND FK_YN IN ('Y','N') AND PCI_YN IN ('Y','N')
-        AND ENCRYPTION_YN IN ('Y','N') AND MASKING_YN IN ('Y','N')
+CREATE TABLE tb_meta_column (
+    column_id              numeric(14)   NOT NULL,
+    table_id               numeric(12)   NOT NULL,
+    column_name            varchar(128)  NOT NULL,
+    column_order           numeric(4)    NOT NULL,
+    logical_name           varchar(200),
+    description            varchar(2000),
+    data_type              varchar(30)   NOT NULL,
+    data_length            numeric(6),
+    data_precision         numeric(6),
+    data_scale             numeric(6),
+    nullable_yn            char(1)       NOT NULL,
+    default_value          varchar(500),
+    pk_yn                  char(1) DEFAULT 'N' NOT NULL,
+    uk_yn                  char(1) DEFAULT 'N' NOT NULL,
+    fk_yn                  char(1) DEFAULT 'N' NOT NULL,
+    pci_yn                 char(1) DEFAULT 'N' NOT NULL,
+    pci_category_cd        varchar(20),
+    sensitivity_cd         varchar(10)   DEFAULT 'LOW' NOT NULL,
+    encryption_yn          char(1) DEFAULT 'N' NOT NULL,
+    encryption_alg         varchar(50),
+    masking_yn             char(1) DEFAULT 'N' NOT NULL,
+    masking_rule_cd        varchar(20),
+    retention_period_cd    varchar(10),
+    tos_cd                 varchar(20),
+    status_cd              varchar(10)   DEFAULT 'ACTIVE' NOT NULL,
+    remark                 varchar(4000),
+    created_by             varchar(128)  NOT NULL,
+    created_at             timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_by             varchar(128)  NOT NULL,
+    updated_at             timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT pk_meta_column PRIMARY KEY (column_id),
+    CONSTRAINT uk_meta_column UNIQUE (table_id, column_name),
+    CONSTRAINT fk_meta_column_table FOREIGN KEY (table_id) REFERENCES tb_meta_table(table_id),
+    CONSTRAINT ck_meta_column_yn CHECK (
+        nullable_yn IN ('Y','N') AND pk_yn IN ('Y','N') AND uk_yn IN ('Y','N')
+        AND fk_yn IN ('Y','N') AND pci_yn IN ('Y','N')
+        AND encryption_yn IN ('Y','N') AND masking_yn IN ('Y','N')
     )
 );
 
-CREATE INDEX IDX_META_COLUMN_01 ON TB_META_COLUMN (TABLE_ID, COLUMN_ORDER);
-CREATE INDEX IDX_META_COLUMN_02 ON TB_META_COLUMN (PCI_YN, PCI_CATEGORY_CD);
+CREATE INDEX idx_meta_column_01 ON tb_meta_column (table_id, column_order);
+CREATE INDEX idx_meta_column_02 ON tb_meta_column (pci_yn, pci_category_cd);
 
 -- ---------------------------------------------------------------------
 -- §6.5 TB_META_INDEX / TB_META_INDEX_COLUMN
 -- ---------------------------------------------------------------------
-CREATE TABLE TB_META_INDEX (
-    INDEX_ID           NUMERIC(12)   NOT NULL,
-    TABLE_ID           NUMERIC(12)   NOT NULL,
-    INDEX_NAME         VARCHAR(128)  NOT NULL,
-    INDEX_TYPE_CD      VARCHAR(20)   NOT NULL,
-    TABLESPACE_NAME    VARCHAR(30),
-    INI_TRANS          NUMERIC(4),
-    PCT_FREE           NUMERIC(3),
-    PURPOSE_CD         VARCHAR(20)   NOT NULL,
-    PERFORMANCE_NOTE   VARCHAR(4000),
-    CREATE_DDL         TEXT,
-    STATUS_CD          VARCHAR(10) DEFAULT 'ACTIVE' NOT NULL,
-    CREATED_BY         VARCHAR(128) NOT NULL,
-    CREATED_AT         TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    UPDATED_BY         VARCHAR(128) NOT NULL,
-    UPDATED_AT         TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    CONSTRAINT PK_META_INDEX PRIMARY KEY (INDEX_ID),
-    CONSTRAINT UK_META_INDEX UNIQUE (TABLE_ID, INDEX_NAME),
-    CONSTRAINT FK_META_INDEX_TABLE FOREIGN KEY (TABLE_ID) REFERENCES TB_META_TABLE(TABLE_ID)
+CREATE TABLE tb_meta_index (
+    index_id           numeric(12)   NOT NULL,
+    table_id           numeric(12)   NOT NULL,
+    index_name         varchar(128)  NOT NULL,
+    index_type_cd      varchar(20)   NOT NULL,
+    tablespace_name    varchar(30),
+    ini_trans          numeric(4),
+    pct_free           numeric(3),
+    purpose_cd         varchar(20)   NOT NULL,
+    performance_note   varchar(4000),
+    create_ddl         text,
+    status_cd          varchar(10) DEFAULT 'ACTIVE' NOT NULL,
+    created_by         varchar(128) NOT NULL,
+    created_at         timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_by         varchar(128) NOT NULL,
+    updated_at         timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT pk_meta_index PRIMARY KEY (index_id),
+    CONSTRAINT uk_meta_index UNIQUE (table_id, index_name),
+    CONSTRAINT fk_meta_index_table FOREIGN KEY (table_id) REFERENCES tb_meta_table(table_id)
 );
 
-CREATE TABLE TB_META_INDEX_COLUMN (
-    INDEX_ID         NUMERIC(12)   NOT NULL,
-    COLUMN_POS       NUMERIC(3)    NOT NULL,
-    COLUMN_NAME      VARCHAR(128)  NOT NULL,
-    SORT_ORDER       VARCHAR(4)    DEFAULT 'ASC' NOT NULL,
-    FUNC_EXPRESSION  VARCHAR(2000),
-    CONSTRAINT PK_META_INDEX_COLUMN PRIMARY KEY (INDEX_ID, COLUMN_POS),
-    CONSTRAINT FK_META_INDEX_COLUMN FOREIGN KEY (INDEX_ID) REFERENCES TB_META_INDEX(INDEX_ID),
-    CONSTRAINT CK_META_INDEX_COLUMN CHECK (SORT_ORDER IN ('ASC','DESC'))
+CREATE TABLE tb_meta_index_column (
+    index_id         numeric(12)   NOT NULL,
+    column_pos       numeric(3)    NOT NULL,
+    column_name      varchar(128)  NOT NULL,
+    sort_order       varchar(4)    DEFAULT 'ASC' NOT NULL,
+    func_expression  varchar(2000),
+    CONSTRAINT pk_meta_index_column PRIMARY KEY (index_id, column_pos),
+    CONSTRAINT fk_meta_index_column FOREIGN KEY (index_id) REFERENCES tb_meta_index(index_id),
+    CONSTRAINT ck_meta_index_column CHECK (sort_order IN ('ASC','DESC'))
 );
 
 -- ---------------------------------------------------------------------
 -- §6.6 TB_META_SEQUENCE
 -- ---------------------------------------------------------------------
-CREATE TABLE TB_META_SEQUENCE (
-    SEQUENCE_ID       NUMERIC(12)   NOT NULL,
-    SCHEMA_NAME       VARCHAR(128)  NOT NULL,
-    SEQUENCE_NAME     VARCHAR(128)  NOT NULL,
-    MIN_VALUE         NUMERIC,
-    MAX_VALUE         NUMERIC,
-    INCREMENT_BY      NUMERIC       NOT NULL,
-    START_WITH        NUMERIC,
-    CACHE_SIZE        NUMERIC,
-    CYCLE_YN          CHAR(1) DEFAULT 'N' NOT NULL,
-    ORDER_YN          CHAR(1) DEFAULT 'N' NOT NULL,
-    PURPOSE_CD        VARCHAR(20)  NOT NULL,
-    USED_FOR_TABLE    VARCHAR(128),
-    USED_FOR_COLUMN   VARCHAR(128),
-    CREATE_DDL        TEXT,
-    STATUS_CD         VARCHAR(10) DEFAULT 'ACTIVE' NOT NULL,
-    CREATED_BY        VARCHAR(128) NOT NULL,
-    CREATED_AT        TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    UPDATED_BY        VARCHAR(128) NOT NULL,
-    UPDATED_AT        TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    CONSTRAINT PK_META_SEQUENCE PRIMARY KEY (SEQUENCE_ID),
-    CONSTRAINT UK_META_SEQUENCE UNIQUE (SCHEMA_NAME, SEQUENCE_NAME),
-    CONSTRAINT CK_META_SEQ_YN CHECK (CYCLE_YN IN ('Y','N') AND ORDER_YN IN ('Y','N'))
+CREATE TABLE tb_meta_sequence (
+    sequence_id       numeric(12)   NOT NULL,
+    schema_name       varchar(128)  NOT NULL,
+    sequence_name     varchar(128)  NOT NULL,
+    min_value         numeric,
+    max_value         numeric,
+    increment_by      numeric       NOT NULL,
+    start_with        numeric,
+    cache_size        numeric,
+    cycle_yn          char(1) DEFAULT 'N' NOT NULL,
+    order_yn          char(1) DEFAULT 'N' NOT NULL,
+    purpose_cd        varchar(20)  NOT NULL,
+    used_for_table    varchar(128),
+    used_for_column   varchar(128),
+    create_ddl        text,
+    status_cd         varchar(10) DEFAULT 'ACTIVE' NOT NULL,
+    created_by        varchar(128) NOT NULL,
+    created_at        timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_by        varchar(128) NOT NULL,
+    updated_at        timestamp DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    CONSTRAINT pk_meta_sequence PRIMARY KEY (sequence_id),
+    CONSTRAINT uk_meta_sequence UNIQUE (schema_name, sequence_name),
+    CONSTRAINT ck_meta_seq_yn CHECK (cycle_yn IN ('Y','N') AND order_yn IN ('Y','N'))
 );
 
 -- ---------------------------------------------------------------------
 -- §6.7 히스토리 시퀀스 (공통)
 -- ---------------------------------------------------------------------
-CREATE SEQUENCE SEQ_META_HIST_ID START WITH 1 INCREMENT BY 1 CACHE 1000 NO CYCLE;
+CREATE SEQUENCE seq_meta_hist_id START WITH 1 INCREMENT BY 1 CACHE 1000 NO CYCLE;
 
 -- ---------------------------------------------------------------------
 -- §6.7 TB_META_TABLE_HIST
 -- ---------------------------------------------------------------------
-CREATE TABLE TB_META_TABLE_HIST (
-    HIST_ID       NUMERIC(16)    NOT NULL,
-    HIST_TYPE     CHAR(1)        NOT NULL,
-    HIST_AT       TIMESTAMP      DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    HIST_BY       VARCHAR(128)   NOT NULL,
-    CHANGE_REASON VARCHAR(2000)  NOT NULL,
+CREATE TABLE tb_meta_table_hist (
+    hist_id       numeric(16)    NOT NULL,
+    hist_type     char(1)        NOT NULL,
+    hist_at       timestamp      DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    hist_by       varchar(128)   NOT NULL,
+    change_reason varchar(2000)  NOT NULL,
     /* ↓ TB_META_TABLE 원본 컬럼 전체 (모두 nullable) */
-    TABLE_ID             NUMERIC(12),
-    SCHEMA_NAME          VARCHAR(128),
-    TABLE_NAME           VARCHAR(128),
-    LOGICAL_NAME         VARCHAR(200),
-    DESCRIPTION          VARCHAR(2000),
-    VIEW_YN              CHAR(1),
-    SERVICE_CD           VARCHAR(20),
-    OWNER_EMP_ID         VARCHAR(20),
-    SECONDARY_EMP_ID     VARCHAR(20),
-    KEY_TABLE_YN         CHAR(1),
-    ISOLATION_YN         CHAR(1),
-    ISOLATION_LEVEL_CD   VARCHAR(10),
-    PCI_YN               CHAR(1),
-    RETENTION_PERIOD_CD  VARCHAR(10),
-    RETENTION_BASIS      VARCHAR(500),
-    TOS_CD               VARCHAR(20),
-    STATUS_CD            VARCHAR(10),
-    REMARK               VARCHAR(4000),
-    CREATED_BY           VARCHAR(128),
-    CREATED_AT           TIMESTAMP,
-    UPDATED_BY           VARCHAR(128),
-    UPDATED_AT           TIMESTAMP,
-    CONSTRAINT PK_META_TABLE_HIST PRIMARY KEY (HIST_ID),
-    CONSTRAINT CK_META_TABLE_HIST_TYPE CHECK (HIST_TYPE IN ('I','U','D'))
+    table_id             numeric(12),
+    schema_name          varchar(128),
+    table_name           varchar(128),
+    logical_name         varchar(200),
+    description          varchar(2000),
+    view_yn              char(1),
+    service_cd           varchar(20),
+    owner_emp_id         varchar(20),
+    secondary_emp_id     varchar(20),
+    key_table_yn         char(1),
+    isolation_yn         char(1),
+    isolation_level_cd   varchar(10),
+    pci_yn               char(1),
+    retention_period_cd  varchar(10),
+    retention_basis      varchar(500),
+    tos_cd               varchar(20),
+    status_cd            varchar(10),
+    remark               varchar(4000),
+    created_by           varchar(128),
+    created_at           timestamp,
+    updated_by           varchar(128),
+    updated_at           timestamp,
+    CONSTRAINT pk_meta_table_hist PRIMARY KEY (hist_id),
+    CONSTRAINT ck_meta_table_hist_type CHECK (hist_type IN ('I','U','D'))
 );
-CREATE INDEX IDX_META_TABLE_HIST_01 ON TB_META_TABLE_HIST (TABLE_ID, HIST_AT);
+CREATE INDEX idx_meta_table_hist_01 ON tb_meta_table_hist (table_id, hist_at);
 
 -- ---------------------------------------------------------------------
 -- §6.7 TB_META_COLUMN_HIST (동일 패턴)
 -- ---------------------------------------------------------------------
-CREATE TABLE TB_META_COLUMN_HIST (
-    HIST_ID       NUMERIC(16)    NOT NULL,
-    HIST_TYPE     CHAR(1)        NOT NULL,
-    HIST_AT       TIMESTAMP      DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    HIST_BY       VARCHAR(128)   NOT NULL,
-    CHANGE_REASON VARCHAR(2000)  NOT NULL,
+CREATE TABLE tb_meta_column_hist (
+    hist_id       numeric(16)    NOT NULL,
+    hist_type     char(1)        NOT NULL,
+    hist_at       timestamp      DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    hist_by       varchar(128)   NOT NULL,
+    change_reason varchar(2000)  NOT NULL,
     /* ↓ TB_META_COLUMN 원본 컬럼 전체 */
-    COLUMN_ID              NUMERIC(14),
-    TABLE_ID               NUMERIC(12),
-    COLUMN_NAME            VARCHAR(128),
-    COLUMN_ORDER           NUMERIC(4),
-    LOGICAL_NAME           VARCHAR(200),
-    DESCRIPTION            VARCHAR(2000),
-    DATA_TYPE              VARCHAR(30),
-    DATA_LENGTH            NUMERIC(6),
-    DATA_PRECISION         NUMERIC(6),
-    DATA_SCALE             NUMERIC(6),
-    NULLABLE_YN            CHAR(1),
-    DEFAULT_VALUE          VARCHAR(500),
-    PK_YN                  CHAR(1),
-    UK_YN                  CHAR(1),
-    FK_YN                  CHAR(1),
-    PCI_YN                 CHAR(1),
-    PCI_CATEGORY_CD        VARCHAR(20),
-    SENSITIVITY_CD         VARCHAR(10),
-    ENCRYPTION_YN          CHAR(1),
-    ENCRYPTION_ALG         VARCHAR(50),
-    MASKING_YN             CHAR(1),
-    MASKING_RULE_CD        VARCHAR(20),
-    RETENTION_PERIOD_CD    VARCHAR(10),
-    TOS_CD                 VARCHAR(20),
-    STATUS_CD              VARCHAR(10),
-    REMARK                 VARCHAR(4000),
-    CREATED_BY             VARCHAR(128),
-    CREATED_AT             TIMESTAMP,
-    UPDATED_BY             VARCHAR(128),
-    UPDATED_AT             TIMESTAMP,
-    CONSTRAINT PK_META_COLUMN_HIST PRIMARY KEY (HIST_ID),
-    CONSTRAINT CK_META_COLUMN_HIST_TYPE CHECK (HIST_TYPE IN ('I','U','D'))
+    column_id              numeric(14),
+    table_id               numeric(12),
+    column_name            varchar(128),
+    column_order           numeric(4),
+    logical_name           varchar(200),
+    description            varchar(2000),
+    data_type              varchar(30),
+    data_length            numeric(6),
+    data_precision         numeric(6),
+    data_scale             numeric(6),
+    nullable_yn            char(1),
+    default_value          varchar(500),
+    pk_yn                  char(1),
+    uk_yn                  char(1),
+    fk_yn                  char(1),
+    pci_yn                 char(1),
+    pci_category_cd        varchar(20),
+    sensitivity_cd         varchar(10),
+    encryption_yn          char(1),
+    encryption_alg         varchar(50),
+    masking_yn             char(1),
+    masking_rule_cd        varchar(20),
+    retention_period_cd    varchar(10),
+    tos_cd                 varchar(20),
+    status_cd              varchar(10),
+    remark                 varchar(4000),
+    created_by             varchar(128),
+    created_at             timestamp,
+    updated_by             varchar(128),
+    updated_at             timestamp,
+    CONSTRAINT pk_meta_column_hist PRIMARY KEY (hist_id),
+    CONSTRAINT ck_meta_column_hist_type CHECK (hist_type IN ('I','U','D'))
 );
-CREATE INDEX IDX_META_COLUMN_HIST_01 ON TB_META_COLUMN_HIST (COLUMN_ID, HIST_AT);
-CREATE INDEX IDX_META_COLUMN_HIST_02 ON TB_META_COLUMN_HIST (TABLE_ID, HIST_AT);
+CREATE INDEX idx_meta_column_hist_01 ON tb_meta_column_hist (column_id, hist_at);
+CREATE INDEX idx_meta_column_hist_02 ON tb_meta_column_hist (table_id, hist_at);
 
 -- ---------------------------------------------------------------------
 -- §6.7 TB_META_INDEX_HIST (동일 패턴)
 -- ---------------------------------------------------------------------
-CREATE TABLE TB_META_INDEX_HIST (
-    HIST_ID       NUMERIC(16)    NOT NULL,
-    HIST_TYPE     CHAR(1)        NOT NULL,
-    HIST_AT       TIMESTAMP      DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    HIST_BY       VARCHAR(128)   NOT NULL,
-    CHANGE_REASON VARCHAR(2000)  NOT NULL,
+CREATE TABLE tb_meta_index_hist (
+    hist_id       numeric(16)    NOT NULL,
+    hist_type     char(1)        NOT NULL,
+    hist_at       timestamp      DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    hist_by       varchar(128)   NOT NULL,
+    change_reason varchar(2000)  NOT NULL,
     /* ↓ TB_META_INDEX 원본 컬럼 전체 */
-    INDEX_ID           NUMERIC(12),
-    TABLE_ID           NUMERIC(12),
-    INDEX_NAME         VARCHAR(128),
-    INDEX_TYPE_CD      VARCHAR(20),
-    TABLESPACE_NAME    VARCHAR(30),
-    INI_TRANS          NUMERIC(4),
-    PCT_FREE           NUMERIC(3),
-    PURPOSE_CD         VARCHAR(20),
-    PERFORMANCE_NOTE   VARCHAR(4000),
-    CREATE_DDL         TEXT,
-    STATUS_CD          VARCHAR(10),
-    CREATED_BY         VARCHAR(128),
-    CREATED_AT         TIMESTAMP,
-    UPDATED_BY         VARCHAR(128),
-    UPDATED_AT         TIMESTAMP,
-    CONSTRAINT PK_META_INDEX_HIST PRIMARY KEY (HIST_ID),
-    CONSTRAINT CK_META_INDEX_HIST_TYPE CHECK (HIST_TYPE IN ('I','U','D'))
+    index_id           numeric(12),
+    table_id           numeric(12),
+    index_name         varchar(128),
+    index_type_cd      varchar(20),
+    tablespace_name    varchar(30),
+    ini_trans          numeric(4),
+    pct_free           numeric(3),
+    purpose_cd         varchar(20),
+    performance_note   varchar(4000),
+    create_ddl         text,
+    status_cd          varchar(10),
+    created_by         varchar(128),
+    created_at         timestamp,
+    updated_by         varchar(128),
+    updated_at         timestamp,
+    CONSTRAINT pk_meta_index_hist PRIMARY KEY (hist_id),
+    CONSTRAINT ck_meta_index_hist_type CHECK (hist_type IN ('I','U','D'))
 );
-CREATE INDEX IDX_META_INDEX_HIST_01 ON TB_META_INDEX_HIST (INDEX_ID, HIST_AT);
+CREATE INDEX idx_meta_index_hist_01 ON tb_meta_index_hist (index_id, hist_at);
 
 -- ---------------------------------------------------------------------
 -- §6.7 TB_META_INDEX_COLUMN_HIST (동일 패턴)
 -- ---------------------------------------------------------------------
-CREATE TABLE TB_META_INDEX_COLUMN_HIST (
-    HIST_ID       NUMERIC(16)    NOT NULL,
-    HIST_TYPE     CHAR(1)        NOT NULL,
-    HIST_AT       TIMESTAMP      DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    HIST_BY       VARCHAR(128)   NOT NULL,
-    CHANGE_REASON VARCHAR(2000)  NOT NULL,
+CREATE TABLE tb_meta_index_column_hist (
+    hist_id       numeric(16)    NOT NULL,
+    hist_type     char(1)        NOT NULL,
+    hist_at       timestamp      DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    hist_by       varchar(128)   NOT NULL,
+    change_reason varchar(2000)  NOT NULL,
     /* ↓ TB_META_INDEX_COLUMN 원본 컬럼 전체 */
-    INDEX_ID         NUMERIC(12),
-    COLUMN_POS       NUMERIC(3),
-    COLUMN_NAME      VARCHAR(128),
-    SORT_ORDER       VARCHAR(4),
-    FUNC_EXPRESSION  VARCHAR(2000),
-    CONSTRAINT PK_META_INDEX_COLUMN_HIST PRIMARY KEY (HIST_ID),
-    CONSTRAINT CK_META_INDEX_COLUMN_HIST_TYPE CHECK (HIST_TYPE IN ('I','U','D'))
+    index_id         numeric(12),
+    column_pos       numeric(3),
+    column_name      varchar(128),
+    sort_order       varchar(4),
+    func_expression  varchar(2000),
+    CONSTRAINT pk_meta_index_column_hist PRIMARY KEY (hist_id),
+    CONSTRAINT ck_meta_index_column_hist_type CHECK (hist_type IN ('I','U','D'))
 );
-CREATE INDEX IDX_META_INDEX_COLUMN_HIST_01 ON TB_META_INDEX_COLUMN_HIST (INDEX_ID, HIST_AT);
+CREATE INDEX idx_meta_index_column_hist_01 ON tb_meta_index_column_hist (index_id, hist_at);
 
 -- ---------------------------------------------------------------------
 -- §6.7 TB_META_SEQUENCE_HIST (동일 패턴)
 -- ---------------------------------------------------------------------
-CREATE TABLE TB_META_SEQUENCE_HIST (
-    HIST_ID       NUMERIC(16)    NOT NULL,
-    HIST_TYPE     CHAR(1)        NOT NULL,
-    HIST_AT       TIMESTAMP      DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    HIST_BY       VARCHAR(128)   NOT NULL,
-    CHANGE_REASON VARCHAR(2000)  NOT NULL,
+CREATE TABLE tb_meta_sequence_hist (
+    hist_id       numeric(16)    NOT NULL,
+    hist_type     char(1)        NOT NULL,
+    hist_at       timestamp      DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    hist_by       varchar(128)   NOT NULL,
+    change_reason varchar(2000)  NOT NULL,
     /* ↓ TB_META_SEQUENCE 원본 컬럼 전체 */
-    SEQUENCE_ID       NUMERIC(12),
-    SCHEMA_NAME       VARCHAR(128),
-    SEQUENCE_NAME     VARCHAR(128),
-    MIN_VALUE         NUMERIC,
-    MAX_VALUE         NUMERIC,
-    INCREMENT_BY      NUMERIC,
-    START_WITH        NUMERIC,
-    CACHE_SIZE        NUMERIC,
-    CYCLE_YN          CHAR(1),
-    ORDER_YN          CHAR(1),
-    PURPOSE_CD        VARCHAR(20),
-    USED_FOR_TABLE    VARCHAR(128),
-    USED_FOR_COLUMN   VARCHAR(128),
-    CREATE_DDL        TEXT,
-    STATUS_CD         VARCHAR(10),
-    CREATED_BY        VARCHAR(128),
-    CREATED_AT        TIMESTAMP,
-    UPDATED_BY        VARCHAR(128),
-    UPDATED_AT        TIMESTAMP,
-    CONSTRAINT PK_META_SEQUENCE_HIST PRIMARY KEY (HIST_ID),
-    CONSTRAINT CK_META_SEQUENCE_HIST_TYPE CHECK (HIST_TYPE IN ('I','U','D'))
+    sequence_id       numeric(12),
+    schema_name       varchar(128),
+    sequence_name     varchar(128),
+    min_value         numeric,
+    max_value         numeric,
+    increment_by      numeric,
+    start_with        numeric,
+    cache_size        numeric,
+    cycle_yn          char(1),
+    order_yn          char(1),
+    purpose_cd        varchar(20),
+    used_for_table    varchar(128),
+    used_for_column   varchar(128),
+    create_ddl        text,
+    status_cd         varchar(10),
+    created_by        varchar(128),
+    created_at        timestamp,
+    updated_by        varchar(128),
+    updated_at        timestamp,
+    CONSTRAINT pk_meta_sequence_hist PRIMARY KEY (hist_id),
+    CONSTRAINT ck_meta_sequence_hist_type CHECK (hist_type IN ('I','U','D'))
 );
-CREATE INDEX IDX_META_SEQUENCE_HIST_01 ON TB_META_SEQUENCE_HIST (SEQUENCE_ID, HIST_AT);
+CREATE INDEX idx_meta_sequence_hist_01 ON tb_meta_sequence_hist (sequence_id, hist_at);
 
 -- ---------------------------------------------------------------------
 -- §6.7 TB_META_CODE_HIST (동일 패턴)
 -- ---------------------------------------------------------------------
-CREATE TABLE TB_META_CODE_HIST (
-    HIST_ID       NUMERIC(16)    NOT NULL,
-    HIST_TYPE     CHAR(1)        NOT NULL,
-    HIST_AT       TIMESTAMP      DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    HIST_BY       VARCHAR(128)   NOT NULL,
-    CHANGE_REASON VARCHAR(2000)  NOT NULL,
+CREATE TABLE tb_meta_code_hist (
+    hist_id       numeric(16)    NOT NULL,
+    hist_type     char(1)        NOT NULL,
+    hist_at       timestamp      DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    hist_by       varchar(128)   NOT NULL,
+    change_reason varchar(2000)  NOT NULL,
     /* ↓ TB_META_CODE 원본 컬럼 전체 */
-    CODE_GROUP    VARCHAR(30),
-    CODE_VALUE    VARCHAR(30),
-    CODE_NAME     VARCHAR(200),
-    DESCRIPTION   VARCHAR(2000),
-    SORT_ORDER    NUMERIC(4),
-    USE_YN        CHAR(1),
-    CREATED_BY    VARCHAR(128),
-    CREATED_AT    TIMESTAMP,
-    UPDATED_BY    VARCHAR(128),
-    UPDATED_AT    TIMESTAMP,
-    CONSTRAINT PK_META_CODE_HIST PRIMARY KEY (HIST_ID),
-    CONSTRAINT CK_META_CODE_HIST_TYPE CHECK (HIST_TYPE IN ('I','U','D'))
+    code_group    varchar(30),
+    code_value    varchar(30),
+    code_name     varchar(200),
+    description   varchar(2000),
+    sort_order    numeric(4),
+    use_yn        char(1),
+    created_by    varchar(128),
+    created_at    timestamp,
+    updated_by    varchar(128),
+    updated_at    timestamp,
+    CONSTRAINT pk_meta_code_hist PRIMARY KEY (hist_id),
+    CONSTRAINT ck_meta_code_hist_type CHECK (hist_type IN ('I','U','D'))
 );
-CREATE INDEX IDX_META_CODE_HIST_01 ON TB_META_CODE_HIST (CODE_GROUP, CODE_VALUE, HIST_AT);
+CREATE INDEX idx_meta_code_hist_01 ON tb_meta_code_hist (code_group, code_value, hist_at);
 
 COMMIT;

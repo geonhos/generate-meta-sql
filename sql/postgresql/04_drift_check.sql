@@ -6,8 +6,8 @@
 -- 다이얼렉트: PostgreSQL (Oracle 원본은 ../04_drift_check.sql 참조)
 --
 -- 사전 수정 필요:
---   - WHERE UPPER(...) IN ('SVC1','SVC2', ...) 의 스키마 목록을 실제
---     대상 스키마(대문자)로 교체.
+--   - WHERE t.table_schema IN ('svc1','svc2', ...) 의 스키마 목록을 실제
+--     대상 스키마(소문자)로 교체.
 --
 -- 매핑: ALL_TABLES → information_schema.tables (BASE TABLE),
 --       ALL_VIEWS → information_schema.views,
@@ -19,45 +19,45 @@
 -- =====================================================================
 -- §8.1 메타에 없지만 실제 DB에는 있는 객체 (Drift: META 누락)
 -- =====================================================================
-SELECT UPPER(t.table_schema) AS schema_name,
-       UPPER(t.table_name)   AS table_name,
-       'N' AS VIEW_YN
+SELECT t.table_schema AS schema_name,
+       t.table_name   AS table_name,
+       'N' AS view_yn
 FROM information_schema.tables t
-LEFT JOIN TB_META_TABLE mt
-       ON mt.SCHEMA_NAME = UPPER(t.table_schema)
-      AND mt.TABLE_NAME  = UPPER(t.table_name)
-WHERE UPPER(t.table_schema) IN ('SVC1','SVC2'/* 대상 스키마 목록 */)
+LEFT JOIN tb_meta_table mt
+       ON mt.schema_name = t.table_schema
+      AND mt.table_name  = t.table_name
+WHERE t.table_schema IN ('svc1','svc2'/* 대상 스키마 목록 */)
   AND t.table_type = 'BASE TABLE'
-  AND mt.TABLE_ID IS NULL
-  AND UPPER(t.table_name) NOT LIKE 'TB_META_%'
+  AND mt.table_id IS NULL
+  AND t.table_name NOT LIKE 'tb_meta_%'
 UNION ALL
-SELECT UPPER(v.table_schema),
-       UPPER(v.table_name),
+SELECT v.table_schema,
+       v.table_name,
        'Y'
 FROM information_schema.views v
-LEFT JOIN TB_META_TABLE mt
-       ON mt.SCHEMA_NAME = UPPER(v.table_schema)
-      AND mt.TABLE_NAME  = UPPER(v.table_name)
-WHERE UPPER(v.table_schema) IN ('SVC1','SVC2'/* 대상 스키마 목록 */)
-  AND mt.TABLE_ID IS NULL
-  AND UPPER(v.table_name) NOT LIKE 'TB_META_%'
+LEFT JOIN tb_meta_table mt
+       ON mt.schema_name = v.table_schema
+      AND mt.table_name  = v.table_name
+WHERE v.table_schema IN ('svc1','svc2'/* 대상 스키마 목록 */)
+  AND mt.table_id IS NULL
+  AND v.table_name NOT LIKE 'tb_meta_%'
 ;
 
 -- =====================================================================
 -- §8.2 메타에는 ACTIVE인데 실제 DB에는 없는 객체 (Drift: 실제 누락)
 -- =====================================================================
-SELECT mt.SCHEMA_NAME, mt.TABLE_NAME, mt.VIEW_YN
-FROM TB_META_TABLE mt
+SELECT mt.schema_name, mt.table_name, mt.view_yn
+FROM tb_meta_table mt
 LEFT JOIN information_schema.tables t
-       ON mt.VIEW_YN = 'N'
-      AND UPPER(t.table_schema) = mt.SCHEMA_NAME
-      AND UPPER(t.table_name)   = mt.TABLE_NAME
+       ON mt.view_yn = 'N'
+      AND t.table_schema = mt.schema_name
+      AND t.table_name   = mt.table_name
       AND t.table_type = 'BASE TABLE'
 LEFT JOIN information_schema.views v
-       ON mt.VIEW_YN = 'Y'
-      AND UPPER(v.table_schema) = mt.SCHEMA_NAME
-      AND UPPER(v.table_name)   = mt.TABLE_NAME
-WHERE mt.STATUS_CD = 'ACTIVE'
+       ON mt.view_yn = 'Y'
+      AND v.table_schema = mt.schema_name
+      AND v.table_name   = mt.table_name
+WHERE mt.status_cd = 'ACTIVE'
   AND t.table_name IS NULL
   AND v.table_name IS NULL
 ;
@@ -69,51 +69,51 @@ WHERE mt.STATUS_CD = 'ACTIVE'
 --   로 반환. NULLABLE은 is_nullable ('YES'/'NO').
 -- =====================================================================
 -- (a) 메타에 있는 컬럼 vs 실제: 정의 불일치 또는 실제 누락
-SELECT mt.SCHEMA_NAME, mt.TABLE_NAME, mc.COLUMN_NAME,
-       mc.DATA_TYPE                                          AS meta_type,
-       UPPER(tc.data_type)                                   AS real_type,
-       mc.DATA_LENGTH                                        AS meta_len,
+SELECT mt.schema_name, mt.table_name, mc.column_name,
+       mc.data_type                                          AS meta_type,
+       tc.data_type                                   AS real_type,
+       mc.data_length                                        AS meta_len,
        COALESCE(tc.character_maximum_length, tc.numeric_precision) AS real_len,
-       mc.DATA_PRECISION                                     AS meta_prec,
+       mc.data_precision                                     AS meta_prec,
        tc.numeric_precision                                  AS real_prec,
-       mc.DATA_SCALE                                         AS meta_scale,
+       mc.data_scale                                         AS meta_scale,
        tc.numeric_scale                                      AS real_scale,
-       mc.NULLABLE_YN                                        AS meta_null,
+       mc.nullable_yn                                        AS meta_null,
        CASE tc.is_nullable WHEN 'YES' THEN 'Y' ELSE 'N' END  AS real_null,
        CASE WHEN tc.column_name IS NULL THEN 'MISSING_IN_DB' ELSE 'MISMATCH' END AS diff_kind
-FROM TB_META_COLUMN mc
-JOIN TB_META_TABLE  mt ON mt.TABLE_ID = mc.TABLE_ID
+FROM tb_meta_column mc
+JOIN tb_meta_table  mt ON mt.table_id = mc.table_id
 LEFT JOIN information_schema.columns tc
-       ON UPPER(tc.table_schema) = mt.SCHEMA_NAME
-      AND UPPER(tc.table_name)   = mt.TABLE_NAME
-      AND UPPER(tc.column_name)  = mc.COLUMN_NAME
-WHERE mt.STATUS_CD = 'ACTIVE'
-  AND mc.STATUS_CD = 'ACTIVE'
+       ON tc.table_schema = mt.schema_name
+      AND tc.table_name   = mt.table_name
+      AND tc.column_name  = mc.column_name
+WHERE mt.status_cd = 'ACTIVE'
+  AND mc.status_cd = 'ACTIVE'
   AND (
         tc.column_name IS NULL
-     OR mc.DATA_TYPE   <> UPPER(tc.data_type)
-     OR COALESCE(mc.DATA_LENGTH, 0)    <> COALESCE(tc.character_maximum_length, tc.numeric_precision, 0)
-     OR COALESCE(mc.DATA_PRECISION,-1) <> COALESCE(tc.numeric_precision,-1)
-     OR COALESCE(mc.DATA_SCALE,-1)     <> COALESCE(tc.numeric_scale,-1)
-     OR mc.NULLABLE_YN <> CASE tc.is_nullable WHEN 'YES' THEN 'Y' ELSE 'N' END
+     OR mc.data_type   <> tc.data_type
+     OR COALESCE(mc.data_length, 0)    <> COALESCE(tc.character_maximum_length, tc.numeric_precision, 0)
+     OR COALESCE(mc.data_precision,-1) <> COALESCE(tc.numeric_precision,-1)
+     OR COALESCE(mc.data_scale,-1)     <> COALESCE(tc.numeric_scale,-1)
+     OR mc.nullable_yn <> CASE tc.is_nullable WHEN 'YES' THEN 'Y' ELSE 'N' END
   )
 UNION ALL
 -- (b) 실제에는 있는데 메타에 없음
-SELECT UPPER(tc.table_schema), UPPER(tc.table_name), UPPER(tc.column_name),
-       NULL, UPPER(tc.data_type),
+SELECT tc.table_schema, tc.table_name, tc.column_name,
+       NULL, tc.data_type,
        NULL, COALESCE(tc.character_maximum_length, tc.numeric_precision),
        NULL, tc.numeric_precision,
        NULL, tc.numeric_scale,
        NULL, CASE tc.is_nullable WHEN 'YES' THEN 'Y' ELSE 'N' END,
        'MISSING_IN_META'
 FROM information_schema.columns tc
-JOIN TB_META_TABLE  mt
-  ON mt.SCHEMA_NAME = UPPER(tc.table_schema) AND mt.TABLE_NAME = UPPER(tc.table_name)
-LEFT JOIN TB_META_COLUMN mc
-       ON mc.TABLE_ID    = mt.TABLE_ID
-      AND mc.COLUMN_NAME = UPPER(tc.column_name)
-WHERE mt.STATUS_CD = 'ACTIVE'
-  AND mc.COLUMN_ID IS NULL
+JOIN tb_meta_table  mt
+  ON mt.schema_name = tc.table_schema AND mt.table_name = tc.table_name
+LEFT JOIN tb_meta_column mc
+       ON mc.table_id    = mt.table_id
+      AND mc.column_name = tc.column_name
+WHERE mt.status_cd = 'ACTIVE'
+  AND mc.column_id IS NULL
 ;
 
 -- 참고: Oracle의 CHAR 시맨틱(CHAR_USED='C')은 PG에 해당 개념이 없으므로 비교 대상 아님.

@@ -17,45 +17,45 @@
 --   PostgreSQL: text 컬럼은 1GB까지 가능하므로 LISTAGG 4000자 제약 없음.
 --   다만 식별자 자체는 NAMEDATALEN(기본 64byte) 한도 있음 — (3) 점검.
 -- ---------------------------------------------------------------------
-SELECT 'CREATE OR REPLACE VIEW ' || mt.SCHEMA_NAME || '.VW_' || mt.TABLE_NAME || ' AS SELECT '
-       || STRING_AGG(mc.COLUMN_NAME, ', ' ORDER BY mc.COLUMN_ORDER)
-       || ' FROM ' || mt.SCHEMA_NAME || '.' || mt.TABLE_NAME || ';' AS DDL
-FROM TB_META_TABLE  mt
-JOIN TB_META_COLUMN mc ON mc.TABLE_ID = mt.TABLE_ID
-WHERE mt.VIEW_YN   = 'Y'
-  AND mt.STATUS_CD = 'ACTIVE'
-  AND mc.STATUS_CD = 'ACTIVE'
-  AND mc.PCI_YN    = 'N'
-GROUP BY mt.SCHEMA_NAME, mt.TABLE_NAME
-ORDER BY mt.SCHEMA_NAME, mt.TABLE_NAME
+SELECT 'CREATE OR REPLACE VIEW ' || mt.schema_name || '.VW_' || mt.table_name || ' AS SELECT '
+       || string_agg(mc.column_name, ', ' ORDER BY mc.column_order)
+       || ' FROM ' || mt.schema_name || '.' || mt.table_name || ';' AS ddl
+FROM tb_meta_table  mt
+JOIN tb_meta_column mc ON mc.table_id = mt.table_id
+WHERE mt.view_yn   = 'Y'
+  AND mt.status_cd = 'ACTIVE'
+  AND mc.status_cd = 'ACTIVE'
+  AND mc.pci_yn    = 'N'
+GROUP BY mt.schema_name, mt.table_name
+ORDER BY mt.schema_name, mt.table_name
 ;
 
 -- ---------------------------------------------------------------------
 -- (2) 점검 — 비-PCI 컬럼이 0개라 생성에서 제외된 VIEW
 -- ---------------------------------------------------------------------
-SELECT mt.SCHEMA_NAME, mt.TABLE_NAME,
-       COUNT(*)                                         AS TOTAL_COL,
-       SUM(CASE WHEN mc.PCI_YN = 'N' THEN 1 ELSE 0 END) AS NON_PCI_COL,
-       SUM(CASE WHEN mc.PCI_YN = 'Y' THEN 1 ELSE 0 END) AS PCI_COL
-FROM TB_META_TABLE  mt
-JOIN TB_META_COLUMN mc ON mc.TABLE_ID = mt.TABLE_ID
-WHERE mt.VIEW_YN   = 'Y'
-  AND mt.STATUS_CD = 'ACTIVE'
-  AND mc.STATUS_CD = 'ACTIVE'
-GROUP BY mt.SCHEMA_NAME, mt.TABLE_NAME
-HAVING SUM(CASE WHEN mc.PCI_YN = 'N' THEN 1 ELSE 0 END) = 0
-ORDER BY mt.SCHEMA_NAME, mt.TABLE_NAME
+SELECT mt.schema_name, mt.table_name,
+       COUNT(*)                                         AS total_col,
+       SUM(CASE WHEN mc.pci_yn = 'N' THEN 1 ELSE 0 END) AS non_pci_col,
+       SUM(CASE WHEN mc.pci_yn = 'Y' THEN 1 ELSE 0 END) AS pci_col
+FROM tb_meta_table  mt
+JOIN tb_meta_column mc ON mc.table_id = mt.table_id
+WHERE mt.view_yn   = 'Y'
+  AND mt.status_cd = 'ACTIVE'
+  AND mc.status_cd = 'ACTIVE'
+GROUP BY mt.schema_name, mt.table_name
+HAVING SUM(CASE WHEN mc.pci_yn = 'N' THEN 1 ELSE 0 END) = 0
+ORDER BY mt.schema_name, mt.table_name
 ;
 
 -- ---------------------------------------------------------------------
 -- (3) 점검 — 'VW_' prefix 추가 시 PostgreSQL 식별자 한도(NAMEDATALEN=64byte) 초과 후보
 --   (운영 DB의 NAMEDATALEN을 늘려 컴파일했다면 별도 조정 필요)
 -- ---------------------------------------------------------------------
-SELECT mt.SCHEMA_NAME, mt.TABLE_NAME,
-       octet_length(mt.TABLE_NAME) + 3 AS GEN_NAME_BYTES
-FROM TB_META_TABLE mt
-WHERE mt.VIEW_YN   = 'Y'
-  AND mt.STATUS_CD = 'ACTIVE'
-  AND octet_length(mt.TABLE_NAME) + 3 > 64
-ORDER BY GEN_NAME_BYTES DESC
+SELECT mt.schema_name, mt.table_name,
+       octet_length(mt.table_name) + 3 AS gen_name_bytes
+FROM tb_meta_table mt
+WHERE mt.view_yn   = 'Y'
+  AND mt.status_cd = 'ACTIVE'
+  AND octet_length(mt.table_name) + 3 > 64
+ORDER BY gen_name_bytes DESC
 ;

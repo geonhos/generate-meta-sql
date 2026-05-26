@@ -11,139 +11,139 @@
 -- =====================================================================
 -- §5.1 코드 적재 검증
 -- =====================================================================
-SELECT CODE_GROUP, COUNT(*) AS cnt
-  FROM TB_META_CODE
- GROUP BY CODE_GROUP
- ORDER BY CODE_GROUP;
+SELECT code_group, COUNT(*) AS cnt
+  FROM tb_meta_code
+ GROUP BY code_group
+ ORDER BY code_group;
 
 -- =====================================================================
 -- §5.2 본 ↔ HIST 행수 일치 검증
 -- =====================================================================
 SELECT 'TABLE'    AS src,
-       (SELECT COUNT(*) FROM TB_META_TABLE)             AS main,
-       (SELECT COUNT(*) FROM TB_META_TABLE_HIST
-         WHERE HIST_TYPE='I' AND CHANGE_REASON='INITIAL_LOAD') AS hist
+       (SELECT COUNT(*) FROM tb_meta_table)             AS main,
+       (SELECT COUNT(*) FROM tb_meta_table_hist
+         WHERE hist_type='I' AND change_reason='INITIAL_LOAD') AS hist
 UNION ALL
 SELECT 'COLUMN',
-       (SELECT COUNT(*) FROM TB_META_COLUMN),
-       (SELECT COUNT(*) FROM TB_META_COLUMN_HIST
-         WHERE HIST_TYPE='I' AND CHANGE_REASON='INITIAL_LOAD')
+       (SELECT COUNT(*) FROM tb_meta_column),
+       (SELECT COUNT(*) FROM tb_meta_column_hist
+         WHERE hist_type='I' AND change_reason='INITIAL_LOAD')
 UNION ALL
 SELECT 'INDEX',
-       (SELECT COUNT(*) FROM TB_META_INDEX),
-       (SELECT COUNT(*) FROM TB_META_INDEX_HIST
-         WHERE HIST_TYPE='I' AND CHANGE_REASON='INITIAL_LOAD')
+       (SELECT COUNT(*) FROM tb_meta_index),
+       (SELECT COUNT(*) FROM tb_meta_index_hist
+         WHERE hist_type='I' AND change_reason='INITIAL_LOAD')
 UNION ALL
 SELECT 'INDEX_COL',
-       (SELECT COUNT(*) FROM TB_META_INDEX_COLUMN),
-       (SELECT COUNT(*) FROM TB_META_INDEX_COLUMN_HIST
-         WHERE HIST_TYPE='I' AND CHANGE_REASON='INITIAL_LOAD')
+       (SELECT COUNT(*) FROM tb_meta_index_column),
+       (SELECT COUNT(*) FROM tb_meta_index_column_hist
+         WHERE hist_type='I' AND change_reason='INITIAL_LOAD')
 UNION ALL
 SELECT 'SEQUENCE',
-       (SELECT COUNT(*) FROM TB_META_SEQUENCE),
-       (SELECT COUNT(*) FROM TB_META_SEQUENCE_HIST
-         WHERE HIST_TYPE='I' AND CHANGE_REASON='INITIAL_LOAD')
+       (SELECT COUNT(*) FROM tb_meta_sequence),
+       (SELECT COUNT(*) FROM tb_meta_sequence_hist
+         WHERE hist_type='I' AND change_reason='INITIAL_LOAD')
 UNION ALL
 SELECT 'CODE',
-       (SELECT COUNT(*) FROM TB_META_CODE),
-       (SELECT COUNT(*) FROM TB_META_CODE_HIST
-         WHERE HIST_TYPE='I' AND CHANGE_REASON='INITIAL_LOAD')
+       (SELECT COUNT(*) FROM tb_meta_code),
+       (SELECT COUNT(*) FROM tb_meta_code_hist
+         WHERE hist_type='I' AND change_reason='INITIAL_LOAD')
 ;
 
 -- =====================================================================
 -- §5.3 코드값 무결성 검증 (참조 정합성)
 -- =====================================================================
-SELECT t.TABLE_ID, t.SCHEMA_NAME, t.TABLE_NAME,
-       '잘못된 SERVICE_CD: '||t.SERVICE_CD AS issue
-  FROM TB_META_TABLE t
+SELECT t.table_id, t.schema_name, t.table_name,
+       '잘못된 SERVICE_CD: '||t.service_cd AS issue
+  FROM tb_meta_table t
  WHERE NOT EXISTS (
-       SELECT 1 FROM TB_META_CODE c
-        WHERE c.CODE_GROUP='CD_SERVICE' AND c.CODE_VALUE = t.SERVICE_CD
+       SELECT 1 FROM tb_meta_code c
+        WHERE c.code_group='CD_SERVICE' AND c.code_value = t.service_cd
    )
 UNION ALL
-SELECT t.TABLE_ID, t.SCHEMA_NAME, t.TABLE_NAME,
-       '잘못된 RETENTION_PERIOD_CD: '||t.RETENTION_PERIOD_CD
-  FROM TB_META_TABLE t
+SELECT t.table_id, t.schema_name, t.table_name,
+       '잘못된 RETENTION_PERIOD_CD: '||t.retention_period_cd
+  FROM tb_meta_table t
  WHERE NOT EXISTS (
-       SELECT 1 FROM TB_META_CODE c
-        WHERE c.CODE_GROUP='CD_RETENTION_PERIOD' AND c.CODE_VALUE = t.RETENTION_PERIOD_CD
+       SELECT 1 FROM tb_meta_code c
+        WHERE c.code_group='CD_RETENTION_PERIOD' AND c.code_value = t.retention_period_cd
    )
 UNION ALL
-SELECT t.TABLE_ID, t.SCHEMA_NAME, t.TABLE_NAME,
-       '잘못된 STATUS_CD: '||t.STATUS_CD
-  FROM TB_META_TABLE t
+SELECT t.table_id, t.schema_name, t.table_name,
+       '잘못된 STATUS_CD: '||t.status_cd
+  FROM tb_meta_table t
  WHERE NOT EXISTS (
-       SELECT 1 FROM TB_META_CODE c
-        WHERE c.CODE_GROUP='CD_STATUS' AND c.CODE_VALUE = t.STATUS_CD
+       SELECT 1 FROM tb_meta_code c
+        WHERE c.code_group='CD_STATUS' AND c.code_value = t.status_cd
    )
 ;
 
 -- =====================================================================
 -- §5.4 SENSITIVITY_CD 검증
 -- =====================================================================
-SELECT c.COLUMN_ID, c.TABLE_ID, c.COLUMN_NAME, c.SENSITIVITY_CD
-  FROM TB_META_COLUMN c
+SELECT c.column_id, c.table_id, c.column_name, c.sensitivity_cd
+  FROM tb_meta_column c
  WHERE NOT EXISTS (
-       SELECT 1 FROM TB_META_CODE m
-        WHERE m.CODE_GROUP='CD_SENSITIVITY' AND m.CODE_VALUE = c.SENSITIVITY_CD
+       SELECT 1 FROM tb_meta_code m
+        WHERE m.code_group='CD_SENSITIVITY' AND m.code_value = c.sensitivity_cd
    )
 ;
 
 -- =====================================================================
 -- §5.5 컬럼 코드값 무결성 검증
 -- =====================================================================
-SELECT c.COLUMN_ID, c.COLUMN_NAME,
-       '잘못된 STATUS_CD: '||c.STATUS_CD AS issue
-  FROM TB_META_COLUMN c
+SELECT c.column_id, c.column_name,
+       '잘못된 STATUS_CD: '||c.status_cd AS issue
+  FROM tb_meta_column c
  WHERE NOT EXISTS (
-       SELECT 1 FROM TB_META_CODE m
-        WHERE m.CODE_GROUP='CD_STATUS' AND m.CODE_VALUE = c.STATUS_CD
+       SELECT 1 FROM tb_meta_code m
+        WHERE m.code_group='CD_STATUS' AND m.code_value = c.status_cd
    )
 UNION ALL
-SELECT c.COLUMN_ID, c.COLUMN_NAME,
-       '잘못된 PCI_CATEGORY_CD: '||c.PCI_CATEGORY_CD
-  FROM TB_META_COLUMN c
- WHERE c.PCI_CATEGORY_CD IS NOT NULL
+SELECT c.column_id, c.column_name,
+       '잘못된 PCI_CATEGORY_CD: '||c.pci_category_cd
+  FROM tb_meta_column c
+ WHERE c.pci_category_cd IS NOT NULL
    AND NOT EXISTS (
-       SELECT 1 FROM TB_META_CODE m
-        WHERE m.CODE_GROUP='CD_PCI_CATEGORY' AND m.CODE_VALUE = c.PCI_CATEGORY_CD
+       SELECT 1 FROM tb_meta_code m
+        WHERE m.code_group='CD_PCI_CATEGORY' AND m.code_value = c.pci_category_cd
    )
 UNION ALL
-SELECT c.COLUMN_ID, c.COLUMN_NAME,
-       '잘못된 MASKING_RULE_CD: '||c.MASKING_RULE_CD
-  FROM TB_META_COLUMN c
- WHERE c.MASKING_RULE_CD IS NOT NULL
+SELECT c.column_id, c.column_name,
+       '잘못된 MASKING_RULE_CD: '||c.masking_rule_cd
+  FROM tb_meta_column c
+ WHERE c.masking_rule_cd IS NOT NULL
    AND NOT EXISTS (
-       SELECT 1 FROM TB_META_CODE m
-        WHERE m.CODE_GROUP='CD_MASKING_RULE' AND m.CODE_VALUE = c.MASKING_RULE_CD
+       SELECT 1 FROM tb_meta_code m
+        WHERE m.code_group='CD_MASKING_RULE' AND m.code_value = c.masking_rule_cd
    )
 ;
 
 -- =====================================================================
 -- §5.6 인덱스/시퀀스 코드값 무결성
 -- =====================================================================
-SELECT i.INDEX_ID, i.INDEX_NAME,
-       '잘못된 INDEX_TYPE_CD: '||i.INDEX_TYPE_CD AS issue
-  FROM TB_META_INDEX i
+SELECT i.index_id, i.index_name,
+       '잘못된 INDEX_TYPE_CD: '||i.index_type_cd AS issue
+  FROM tb_meta_index i
  WHERE NOT EXISTS (
-       SELECT 1 FROM TB_META_CODE m
-        WHERE m.CODE_GROUP='CD_INDEX_TYPE' AND m.CODE_VALUE = i.INDEX_TYPE_CD
+       SELECT 1 FROM tb_meta_code m
+        WHERE m.code_group='CD_INDEX_TYPE' AND m.code_value = i.index_type_cd
    )
 UNION ALL
-SELECT i.INDEX_ID, i.INDEX_NAME,
-       '잘못된 PURPOSE_CD: '||i.PURPOSE_CD
-  FROM TB_META_INDEX i
+SELECT i.index_id, i.index_name,
+       '잘못된 PURPOSE_CD: '||i.purpose_cd
+  FROM tb_meta_index i
  WHERE NOT EXISTS (
-       SELECT 1 FROM TB_META_CODE m
-        WHERE m.CODE_GROUP='CD_INDEX_PURPOSE' AND m.CODE_VALUE = i.PURPOSE_CD
+       SELECT 1 FROM tb_meta_code m
+        WHERE m.code_group='CD_INDEX_PURPOSE' AND m.code_value = i.purpose_cd
    )
 UNION ALL
-SELECT s.SEQUENCE_ID, s.SEQUENCE_NAME,
-       '잘못된 PURPOSE_CD: '||s.PURPOSE_CD
-  FROM TB_META_SEQUENCE s
+SELECT s.sequence_id, s.sequence_name,
+       '잘못된 PURPOSE_CD: '||s.purpose_cd
+  FROM tb_meta_sequence s
  WHERE NOT EXISTS (
-       SELECT 1 FROM TB_META_CODE m
-        WHERE m.CODE_GROUP='CD_SEQUENCE_PURPOSE' AND m.CODE_VALUE = s.PURPOSE_CD
+       SELECT 1 FROM tb_meta_code m
+        WHERE m.code_group='CD_SEQUENCE_PURPOSE' AND m.code_value = s.purpose_cd
    )
 ;
 
@@ -160,5 +160,5 @@ SELECT a.pid,
   FROM pg_stat_activity a
   JOIN pg_locks         l ON a.pid = l.pid
   JOIN pg_class         c ON l.relation = c.oid
- WHERE UPPER(c.relname) LIKE 'TB_META_%'
+ WHERE c.relname LIKE 'tb_meta_%'
 ;

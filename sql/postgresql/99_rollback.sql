@@ -15,43 +15,43 @@
 -- ---------------------------------------------------------------------
 -- §99.1 FK 제약 제거 (DROP TABLE 순서 의존 해소)
 -- ---------------------------------------------------------------------
-ALTER TABLE TB_META_INDEX_COLUMN DROP CONSTRAINT FK_META_INDEX_COLUMN;
-ALTER TABLE TB_META_INDEX        DROP CONSTRAINT FK_META_INDEX_TABLE;
-ALTER TABLE TB_META_COLUMN       DROP CONSTRAINT FK_META_COLUMN_TABLE;
+ALTER TABLE tb_meta_index_column DROP CONSTRAINT fk_meta_index_column;
+ALTER TABLE tb_meta_index        DROP CONSTRAINT fk_meta_index_table;
+ALTER TABLE tb_meta_column       DROP CONSTRAINT fk_meta_column_table;
 
 -- ---------------------------------------------------------------------
 -- §99.2 HIST 테이블 폐기
 -- ---------------------------------------------------------------------
-DROP TABLE TB_META_INDEX_COLUMN_HIST;
-DROP TABLE TB_META_INDEX_HIST;
-DROP TABLE TB_META_COLUMN_HIST;
-DROP TABLE TB_META_TABLE_HIST;
-DROP TABLE TB_META_SEQUENCE_HIST;
-DROP TABLE TB_META_CODE_HIST;
+DROP TABLE tb_meta_index_column_hist;
+DROP TABLE tb_meta_index_hist;
+DROP TABLE tb_meta_column_hist;
+DROP TABLE tb_meta_table_hist;
+DROP TABLE tb_meta_sequence_hist;
+DROP TABLE tb_meta_code_hist;
 
 -- ---------------------------------------------------------------------
 -- §99.3 본 테이블 폐기
 -- ---------------------------------------------------------------------
-DROP TABLE TB_META_INDEX_COLUMN;
-DROP TABLE TB_META_INDEX;
-DROP TABLE TB_META_COLUMN;
-DROP TABLE TB_META_SEQUENCE;
-DROP TABLE TB_META_TABLE;
-DROP TABLE TB_META_CODE;
+DROP TABLE tb_meta_index_column;
+DROP TABLE tb_meta_index;
+DROP TABLE tb_meta_column;
+DROP TABLE tb_meta_sequence;
+DROP TABLE tb_meta_table;
+DROP TABLE tb_meta_code;
 
 -- ---------------------------------------------------------------------
 -- §99.4 시퀀스 폐기
 -- ---------------------------------------------------------------------
-DROP SEQUENCE SEQ_META_HIST_ID;
-DROP SEQUENCE SEQ_META_SEQUENCE_ID;
-DROP SEQUENCE SEQ_META_INDEX_ID;
-DROP SEQUENCE SEQ_META_COLUMN_ID;
-DROP SEQUENCE SEQ_META_TABLE_ID;
+DROP SEQUENCE seq_meta_hist_id;
+DROP SEQUENCE seq_meta_sequence_id;
+DROP SEQUENCE seq_meta_index_id;
+DROP SEQUENCE seq_meta_column_id;
+DROP SEQUENCE seq_meta_table_id;
 
 -- ---------------------------------------------------------------------
 -- §99.5 검증 (실행 후 - 결과 0건이어야 함)
 -- ---------------------------------------------------------------------
 -- SELECT table_name FROM information_schema.tables
---  WHERE UPPER(table_name) LIKE 'TB_META_%';
+--  WHERE UPPER(table_name) LIKE 'tb_meta_%';
 -- SELECT sequencename FROM pg_sequences
---  WHERE UPPER(sequencename) LIKE 'SEQ_META_%';
+--  WHERE UPPER(sequencename) LIKE 'seq_meta_%';
